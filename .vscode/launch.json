@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchTablet}/macOS",
+            "name": "Debug Sidecard (macOS)",
+            "target": "Sidecard",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Sidecard (macOS)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchTablet}/macOS",
+            "name": "Release Sidecard (macOS)",
+            "target": "Sidecard",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Sidecard (macOS)"
+        }
+    ]
+}
