@@ -1,0 +1,4 @@
+run build 
+cd ~/Desktop/TouchPadSource
+chmod +x build.sh
+./build.sh

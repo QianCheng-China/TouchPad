@@ -75,6 +75,15 @@ cat > "${APP_NAME}.app/Contents/Info.plist" << EOF
 </plist>
 EOF
 
+echo "正在打包 adb 工具..."
+if [ -f "adb" ]; then
+    # 确保具有执行权限
+    chmod +x adb
+    cp adb "${APP_NAME}.app/Contents/Resources/"
+else
+    echo "警告：未找到 adb 文件，请将 adb 放在脚本同目录下"
+fi
+
 # 4. 处理图标 (如果没图片，生成一个简单的默认图标)
 ICON_PATH="${APP_NAME}.app/Contents/Resources/AppIcon.icns"
 if [ ! -f "AppIcon.png" ]; then

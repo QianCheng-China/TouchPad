@@ -15,11 +15,35 @@ func startNetworkServices() {
 }
 
 public func setupAdbTunnel() {
-    let paths = ["/usr/local/bin/adb", "/opt/homebrew/bin/adb", "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/adb", "adb"]
-    var adbPath: String?
-    for path in paths { if FileManager.default.isExecutableFile(atPath: path) { adbPath = path; break } }
-    guard let path = adbPath else { return }
+    var paths = [String]()
     
+    // 1. 【最高优先级】查找 App 包内部的 adb (Resources 目录)
+    if let bundlePath = Bundle.main.path(forResource: "adb", ofType: nil) {
+        paths.append(bundlePath)
+    }
+    
+    // 2. 【备选】查找系统路径 (兼容开发者环境)
+    paths.append(contentsOf: [
+        "/usr/local/bin/adb",
+        "/opt/homebrew/bin/adb",
+        "\(NSHomeDirectory())/Library/Android/sdk/platform-tools/adb"
+    ])
+    
+    var adbPath: String?
+    for path in paths {
+        // 检查文件是否存在且可执行
+        if FileManager.default.isExecutableFile(atPath: path) {
+            adbPath = path
+            break
+        }
+    }
+    
+    guard let path = adbPath else {
+        NSLog("[TouchPad] 未找到 adb 可执行文件")
+        return
+    }
+    
+    // --- 以下是原有的执行逻辑 ---
     let task = Process()
     task.executableURL = URL(fileURLWithPath: path)
     task.arguments = ["devices"]
@@ -41,6 +65,7 @@ public func setupAdbTunnel() {
         }
     }
 }
+
 
 func runAdbCommand(path: String, serial: String) {
     DispatchQueue.global().async {
