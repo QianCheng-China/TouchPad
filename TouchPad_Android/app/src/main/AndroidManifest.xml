@@ -11,6 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
         <activity
+            android:screenOrientation="sensorLandscape"
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

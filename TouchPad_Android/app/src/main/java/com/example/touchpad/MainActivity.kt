@@ -33,7 +33,6 @@ class MainActivity : ComponentActivity() {
 
     private var isLocked = false
     private var syncJob: Job? = null
-
     private var isDeviceOwner = false
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminName: ComponentName
@@ -96,21 +95,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 【关键修复】如果当前逻辑上是锁定态，强制重置状态。
-        // 这解决了用户手动上滑退出后，无法自动重新锁定的问题。
         if (isLocked) {
             isLocked = false
-            // 延迟一会让同步机制重新触发锁定
-            scope.launch {
-                delay(500)
-                requestSync()
-            }
+            scope.launch { delay(500); requestSync() }
         }
     }
 
-    private fun requestSync() {
-        sendChannel.trySend("SYNC_REQ\n")
-    }
+    private fun requestSync() { sendChannel.trySend("SYNC_REQ\n") }
 
     private fun startSyncPolling() {
         syncJob = scope.launch(Dispatchers.IO) {
@@ -124,6 +115,7 @@ class MainActivity : ComponentActivity() {
     private suspend fun connectToMac() {
         if (socket != null && socket!!.isConnected && outputStream != null) return
         try {
+            // 仅尝试 USB 连接
             val usbSocket = Socket()
             usbSocket.tcpNoDelay = true
             usbSocket.soTimeout = 5000
@@ -133,23 +125,11 @@ class MainActivity : ComponentActivity() {
                 outputStream = socket!!.getOutputStream()
                 println("[Android] USB 连接成功")
                 initializeConnection(socket!!.getInputStream())
-                return
-            } catch (_: Exception) { usbSocket.close() }
-
-            val serverIp = discoverServerIp()
-            if (serverIp != null) {
-                try {
-                    val wifiSocket = Socket()
-                    wifiSocket.tcpNoDelay = true
-                    wifiSocket.soTimeout = 5000
-                    wifiSocket.connect(InetSocketAddress(serverIp, 9527), 1000)
-                    socket = wifiSocket
-                    outputStream = socket!!.getOutputStream()
-                    println("[Android] WiFi 连接成功: $serverIp")
-                    initializeConnection(socket!!.getInputStream())
-                } catch (_: Exception) { socket = null; outputStream = null }
-            } else { socket = null; outputStream = null }
-        } catch (_: Exception) { socket = null; outputStream = null }
+            } catch (e: Exception) {
+                usbSocket.close()
+                println("[Android] USB 连接失败: ${e.message}")
+            }
+        } catch (_: Exception) {}
     }
 
     private fun initializeConnection(inputStream: InputStream) {
@@ -184,15 +164,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun enableLockMode() {
-        // 【关键修复】如果已经锁定，直接返回，防止重复调用 startLockTask 导致弹窗
         if (isLocked) return
-
         isLocked = true
-        println("[Android] 进入锁定模式")
 
+        // 隐藏系统栏
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                // 【修复】修正拼写错误 SWAIP -> SWIPE
                 controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } else {
@@ -203,21 +182,26 @@ class MainActivity : ComponentActivity() {
                     )
         }
 
+        // 锁定任务
         try {
-            if (isDeviceOwner) {
-                dpm.setLockTaskFeatures(adminName, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
+            // 【修复】增加 API 28 检查，解决 API level 要求错误
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if (isDeviceOwner) {
+                    dpm.setLockTaskFeatures(adminName, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
+                }
             }
             startLockTask()
-        } catch (e: Exception) { println("[Android] Lock Error: ${e.message}") }
+        } catch (e: Exception) {
+            println("[Android] Lock Error: ${e.message}")
+        }
     }
 
     private fun disableLockMode() {
         if (!isLocked) return
         isLocked = false
-        println("[Android] 退出锁定模式")
-
         try { stopLockTask() } catch (_: Exception) {}
 
+        // 显示系统栏
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
             window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
@@ -225,21 +209,6 @@ class MainActivity : ComponentActivity() {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
-    }
-
-    private fun discoverServerIp(): String? {
-        val socket = DatagramSocket()
-        socket.broadcast = true
-        socket.soTimeout = 2000
-        return try {
-            socket.send(DatagramPacket("TABLET_DISCOVER".toByteArray(), 18, InetAddress.getByName("255.255.255.255"), 9528))
-            val receiveData = ByteArray(1024)
-            val receivePacket = DatagramPacket(receiveData, receiveData.size)
-            socket.receive(receivePacket)
-            if (String(receivePacket.data, 0, receivePacket.length) == "TABLET_SERVER_ACK") receivePacket.address.hostAddress
-            else null
-        } catch (_: Exception) { null }
-        finally { socket.close() }
     }
 
     override fun onDestroy() {
