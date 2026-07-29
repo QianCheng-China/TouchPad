@@ -3,96 +3,161 @@ import Cocoa
 import ApplicationServices
 
 let COORD_SCALE: CGFloat = 10000.0
-
-// 仅用于记录当前是否处于 "按下" 状态，辅助 MOVE 判断
 var isStylusDown: Bool = false
 
 func processCommand(_ cmd: String, from id: String) {
-    // [日志] 入口
-    NSLog("[TouchPad] [RX] 接收: \(cmd)")
-    
     let parts = cmd.split(separator: ",")
-    guard parts.count == 4 else { return }
+    guard parts.count >= 4 else { return }
     
-    guard let action = String(parts[0]).uppercased() as String?,
-          let tool = String(parts[1]).uppercased() as String?,
+    let action = String(parts[0]).uppercased()
+    
+    if action == "GESTURE" {
+        processGesture(parts: parts)
+        return
+    }
+    
+    guard let tool = String(parts[1]).uppercased() as String?,
           let x = Double(String(parts[2])),
           let y = Double(String(parts[3])) else { return }
     
-    // 权限与模式检查
     if AppState.shared.activeDevice != nil && AppState.shared.activeDevice != id { return }
     if AppState.shared.inputMode == .stylusOnly && tool != "STYLUS" { return }
     
-    // 计算坐标
     guard let screen = NSScreen.main else { return }
     let point = CGPoint(
         x: (CGFloat(x) / COORD_SCALE) * screen.frame.width,
         y: (CGFloat(y) / COORD_SCALE) * screen.frame.height
     )
     
-    // [核心逻辑] 根据指令执行操作
     switch action {
     case "HOVER":
-        // 策略：激进重置
-        // 无论之前状态如何，HOVER 意味着 "松开并移动"。
-        // 无条件发送 UP 事件，可以解除任何因丢包或异常导致的 "卡死" 状态。
-        // 额外的 UP 事件对系统无害，但能修复卡死。
-        
         if isStylusDown {
-            NSLog("[TouchPad] [WARN] 检测到状态不一致: HOVER时记录为按下，执行强制释放")
+            postMouseEvent(type: .leftMouseUp, location: point, button: .left)
+            isStylusDown = false
         }
-        
-        // 1. 强制发送 UP (关键修复步骤)
-        postMouseEvent(type: .leftMouseUp, location: point, button: .left)
-        
-        // 2. 发送移动
         postMouseEvent(type: .mouseMoved, location: point, button: .left)
-        
-        // 3. 重置状态
-        isStylusDown = false
-        
     case "MOVE":
         if isStylusDown {
-            // 如果是按下状态，发送拖拽事件
             postMouseEvent(type: .leftMouseDragged, location: point, button: .left)
         } else {
-            // 否则发送普通移动
             postMouseEvent(type: .mouseMoved, location: point, button: .left)
         }
-        
     case "DOWN":
-        NSLog("[TouchPad] [INFO] 执行 DOWN")
         isStylusDown = true
         postMouseEvent(type: .leftMouseDown, location: point, button: .left)
-        
     case "UP":
-        NSLog("[TouchPad] [INFO] 执行 UP")
         isStylusDown = false
         postMouseEvent(type: .leftMouseUp, location: point, button: .left)
-        
     default:
         break
     }
 }
 
-// 底层事件发送封装
+func processGesture(parts: [String.SubSequence]) {
+    guard parts.count >= 4 else { return }
+    guard let type = String(parts[1]).uppercased() as String?,
+          let dx = Double(String(parts[2])),
+          let dy = Double(String(parts[3])) else { return }
+    
+    switch type {
+    case "SCROLL":
+        postScrollEvent(dx: dx, dy: dy)
+    case "ZOOM":
+        let factor = dx
+        if abs(factor - 1.0) < 0.005 { return }
+        
+        // 开关：使用原生手势还是 Control+Scroll
+        let useNativeGesture = true // 如果原生手势不生效，改为 false
+        
+        if useNativeGesture {
+            postPinchGesture(scale: factor)
+        } else {
+            postControlZoom(factor: factor)
+        }
+    default:
+        break
+    }
+}
+
 func postMouseEvent(type: CGEventType, location: CGPoint, button: CGMouseButton) {
-    // 创建事件
     guard let event = CGEvent(
         mouseEventSource: nil,
         mouseType: type,
         mouseCursorPosition: location,
         mouseButton: button
-    ) else {
-        NSLog("[TouchPad] [ERR] CGEvent 创建失败! Type: \(type), Loc: \(location)")
-        return
+    ) else { return }
+    event.post(tap: .cghidEventTap)
+}
+
+func postScrollEvent(dx: Double, dy: Double) {
+    guard let event = CGEvent(
+        scrollWheelEvent2Source: nil,
+        units: .pixel,
+        wheelCount: 2,
+        wheel1: Int32(dy),
+        wheel2: Int32(dx),
+        wheel3: 0
+    ) else { return }
+    event.post(tap: .cghidEventTap)
+}
+
+// 【方案一】原生捏合手势 (修复方向)
+func postPinchGesture(scale: Double) {
+    guard let event = CGEvent(source: nil) else { return }
+    event.type = CGEventType(rawValue: 41)!
+    
+    // 【核心修复】反转手势比例
+    // 如果 factor > 1.0 (张开) 却导致了缩小，说明系统解释反了
+    // 我们发送一个 "反向" 的比例，让系统表现出正确的效果
+    let correctedScale: Double
+    if scale > 1.0 {
+        correctedScale = 1.0 / scale // 张开 -> 压缩比例 (如 1.04 -> 0.96)
+    } else if scale < 1.0 {
+        correctedScale = 1.0 / scale // 捏合 -> 扩张比例 (如 0.96 -> 1.04)
+    } else {
+        correctedScale = 1.0
     }
     
-    // 发送事件
+    // 设置手势类型为 Pinch (6)
+    event.setIntegerValueField(CGEventField(rawValue: 102)!, value: 6)
+    
+    // Begin
+    event.setIntegerValueField(CGEventField(rawValue: 101)!, value: 1)
+    event.setDoubleValueField(CGEventField(rawValue: 110)!, value: 1.0)
     event.post(tap: .cghidEventTap)
     
-    // [调试日志] 仅在状态切换时打印，避免刷屏
-    if type == .leftMouseDown || type == .leftMouseUp {
-        NSLog("[TouchPad] [POST] 事件已发送: \(type)")
-    }
+    // Changed
+    event.setIntegerValueField(CGEventField(rawValue: 101)!, value: 2)
+    event.setDoubleValueField(CGEventField(rawValue: 110)!, value: correctedScale)
+    event.post(tap: .cghidEventTap)
+    
+    // End
+    event.setIntegerValueField(CGEventField(rawValue: 101)!, value: 4)
+    event.post(tap: .cghidEventTap)
+}
+
+// 【方案二】Control + 滚动 (备选方案)
+func postControlZoom(factor: Double) {
+    let delta = factor - 1.0
+    if abs(delta) < 0.002 { return }
+    
+    let acceleration: Double = 600.0
+    var scrollLines = Int32(abs(delta) * acceleration)
+    if scrollLines < 5 { scrollLines = 5 }
+    
+    // 修正方向：张开(factor>1) 为放大(lines为负)
+    // 如果方向反了，就把这里改为 scrollLines (正数)
+    let finalLines = delta > 0 ? -scrollLines : scrollLines
+    
+    guard let event = CGEvent(
+        scrollWheelEvent2Source: nil,
+        units: .line,
+        wheelCount: 1,
+        wheel1: finalLines,
+        wheel2: 0,
+        wheel3: 0
+    ) else { return }
+    
+    event.flags = .maskControl
+    event.post(tap: .cghidEventTap)
 }

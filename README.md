@@ -113,4 +113,4 @@ TouchPad 是一套轻量级、跨平台的数位板解决方案。它允许用�
   ```bash
   adb shell dpm remove-active-admin com.example.touchpad/.MyDeviceAdminReceiver
   ```
-  然后再进行卸载。
+  然后再进行卸载。90

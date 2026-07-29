@@ -30,16 +30,15 @@ class MainActivity : ComponentActivity() {
     private var outputStream: OutputStream? = null
     private val scope = MainScope()
     private val sendChannel = Channel<String>(capacity = Channel.UNLIMITED)
-
     private var isLocked = false
     private var syncJob: Job? = null
     private var isDeviceOwner = false
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminName: ComponentName
+    private var drawingPadView: DrawingPadView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminName = ComponentName(this, MyDeviceAdminReceiver::class.java)
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName)
@@ -69,8 +68,12 @@ class MainActivity : ComponentActivity() {
                             if (outputStream != null) {
                                 outputStream!!.write(msg.toByteArray())
                                 outputStream!!.flush()
-                            } else { break }
-                        } catch (_: Exception) { socket = null; outputStream = null; break }
+                            } else {
+                                break
+                            }
+                        } catch (_: Exception) {
+                            socket = null; outputStream = null; break
+                        }
                     }
                 } catch (_: Exception) {}
                 delay(1000)
@@ -82,8 +85,16 @@ class MainActivity : ComponentActivity() {
                 AndroidView(
                     factory = { context ->
                         DrawingPadView(context).apply {
+                            drawingPadView = this
+                            // 原有指令回调
                             onCommandSent = { action: String, tool: String, x: Int, y: Int ->
                                 sendChannel.trySend("$action,$tool,$x,$y\n")
+                            }
+                            // 新增手势指令回调
+                            onGestureCommand = { type: String, dx: Float, dy: Float ->
+                                // 格式: GESTURE,type,dx,dy
+                                // 保留两位小数避免过长
+                                sendChannel.trySend("GESTURE,$type,${"%.2f".format(dx)},${"%.2f".format(dy)}\n")
                             }
                         }
                     },
@@ -115,7 +126,6 @@ class MainActivity : ComponentActivity() {
     private suspend fun connectToMac() {
         if (socket != null && socket!!.isConnected && outputStream != null) return
         try {
-            // 仅尝试 USB 连接
             val usbSocket = Socket()
             usbSocket.tcpNoDelay = true
             usbSocket.soTimeout = 5000
@@ -153,6 +163,9 @@ class MainActivity : ComponentActivity() {
                 when {
                     line == "CMD_LOCK" -> runOnUiThread { enableLockMode() }
                     line == "CMD_UNLOCK" -> runOnUiThread { disableLockMode() }
+                    // 新增手势开关
+                    line == "CMD_GESTURE_ON" -> runOnUiThread { drawingPadView?.setGestureMode(true) }
+                    line == "CMD_GESTURE_OFF" -> runOnUiThread { drawingPadView?.setGestureMode(false) }
                     line.startsWith("SYNC_RESP:") -> {
                         val state = line.split(":").getOrNull(1)
                         if (state == "LOCKED") runOnUiThread { enableLockMode() }
@@ -166,42 +179,34 @@ class MainActivity : ComponentActivity() {
     private fun enableLockMode() {
         if (isLocked) return
         isLocked = true
-
-        // 隐藏系统栏
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                // 【修复】修正拼写错误 SWAIP -> SWIPE
                 controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                            View.SYSTEM_UI_FLAG_FULLSCREEN or
+                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     )
         }
-
-        // 锁定任务
         try {
-            // 【修复】增加 API 28 检查，解决 API level 要求错误
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 if (isDeviceOwner) {
                     dpm.setLockTaskFeatures(adminName, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
                 }
             }
             startLockTask()
-        } catch (e: Exception) {
-            println("[Android] Lock Error: ${e.message}")
-        }
+        } catch (e: Exception) { println("[Android] Lock Error: ${e.message}") }
     }
 
     private fun disableLockMode() {
         if (!isLocked) return
         isLocked = false
         try { stopLockTask() } catch (_: Exception) {}
-
-        // 显示系统栏
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
             window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT

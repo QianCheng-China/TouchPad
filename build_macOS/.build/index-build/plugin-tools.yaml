@@ -1,0 +1,47 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "TouchPad-arm64-apple-macosx15.0-debug.module": ["<TouchPad-arm64-apple-macosx15.0-debug.module>"]
+  "main": ["<TouchPad-arm64-apple-macosx15.0-debug.module>"]
+  "test": ["<TouchPad-arm64-apple-macosx15.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"]
+    outputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/sources"]
+    description: "Write auxiliary file /Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/sources"
+
+  "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<TouchPad-arm64-apple-macosx15.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/Modules/TouchPad.swiftmodule"]
+    outputs: ["<TouchPad-arm64-apple-macosx15.0-debug.module>"]
+
+  "C.TouchPad-arm64-apple-macosx15.0-debug.module":
+    tool: shell
+    inputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/sources"]
+    outputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/Modules/TouchPad.swiftmodule"]
+    description: "Compiling Swift Module 'TouchPad' (5 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","TouchPad","-emit-dependencies","-emit-module","-emit-module-path","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/Modules/TouchPad.swiftmodule","-output-file-map","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/output-file-map.json","-incremental","@/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/sources","-I","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx11.0","-enable-batch-mode","-index-store-path","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-swift-version","5","-Xfrontend","-experimental-lazy-typecheck","-Xfrontend","-experimental-skip-all-function-bodies","-Xfrontend","-experimental-allow-module-with-compiler-errors","-Xfrontend","-empty-abi-descriptor","-F","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/","/Users/admin/Desktop/TouchTablet/build_macOS/Package.swift","/Users/admin/Desktop/TouchTablet/build_macOS/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

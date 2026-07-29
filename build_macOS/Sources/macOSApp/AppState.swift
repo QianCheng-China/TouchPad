@@ -20,13 +20,14 @@ class AppState: ObservableObject {
     @Published var isMouseDown: Bool = false
     @Published var isLocked: Bool = false
     
+    // 手势开关
+    @Published var gestureEnabled: Bool = false
+    
     func registerDevice(_ id: String) {
         DispatchQueue.main.async {
             if !self.connectedDevices.contains(id) {
                 self.connectedDevices.append(id)
-                if self.activeDevice == nil {
-                    self.activeDevice = id
-                }
+                if self.activeDevice == nil { self.activeDevice = id }
                 NotificationCenter.default.post(name: .deviceListChanged, object: nil)
             }
         }
@@ -35,29 +36,9 @@ class AppState: ObservableObject {
     func removeDevice(_ id: String) {
         DispatchQueue.main.async {
             self.connectedDevices.removeAll { $0 == id }
-            
-            if self.activeDevice == id {
-                self.activeDevice = self.connectedDevices.first
-                // 断开设备时强制重置状态
-                self.isMouseDown = false
-            }
-            
+            if self.activeDevice == id { self.activeDevice = self.connectedDevices.first }
+            self.isMouseDown = false
             NotificationCenter.default.post(name: .deviceListChanged, object: nil)
-        }
-    }
-    
-    // 【新增】提供一个安全的方法来强制重置鼠标状态
-    func forceResetMouseState() {
-        DispatchQueue.main.async {
-            if self.isMouseDown {
-                self.isMouseDown = false
-                // 发送真实的鼠标释放事件，确保系统状态同步
-                if let location = NSEvent.mouseLocation as CGPoint? {
-                    // 这里仅仅重置状态，不发送事件，因为AppDelegate会处理
-                    // 但如果需要更底层控制，可以在这里调用MouseController
-                }
-                NSLog("[AppState] 强制重置鼠标状态为 false")
-            }
         }
     }
 }

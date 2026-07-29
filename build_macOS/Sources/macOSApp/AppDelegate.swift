@@ -7,8 +7,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         NSLog("[TouchPad] 正在初始化...")
         NSApp.setActivationPolicy(.accessory)
-        
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        
         if let button = statusItem.button {
             if let image = NSImage(systemSymbolName: "pencil.tip", accessibilityDescription: "TouchPad") {
                 image.isTemplate = true
@@ -23,18 +23,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         rebuildMenu()
-        NotificationCenter.default.addObserver(forName: .deviceListChanged, object: nil, queue: .main) { _ in
-            self.rebuildMenu()
-        }
+        NotificationCenter.default.addObserver(forName: .deviceListChanged, object: nil, queue: .main) { _ in self.rebuildMenu() }
         
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
         if !AXIsProcessTrustedWithOptions(options) {
             NSLog("[TouchPad] 警告: 缺少辅助功能权限")
         }
-        
         startNetworkServices()
     }
-    
+
     func rebuildMenu() {
         let menu = NSMenu()
         
@@ -55,10 +52,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         modeMenuItem.submenu = modeSubMenu
         menu.addItem(modeMenuItem)
         
-        // --- 设备列表子菜单 ---
+        // --- 手势功能子菜单 (仅在触控笔模式下可用) ---
+        if AppState.shared.inputMode == .stylusOnly {
+            let gestureMenuItem = NSMenuItem(title: "手指功能", action: nil, keyEquivalent: "")
+            let gestureSubMenu = NSMenu()
+            
+            let gOnItem = NSMenuItem(title: "缩放与平移", action: #selector(enableGesture), keyEquivalent: "")
+            gOnItem.target = self
+            gOnItem.state = (AppState.shared.gestureEnabled) ? .on : .off
+            
+            let gOffItem = NSMenuItem(title: "忽略触摸", action: #selector(disableGesture), keyEquivalent: "")
+            gOffItem.target = self
+            gOffItem.state = (!AppState.shared.gestureEnabled) ? .on : .off
+            
+            gestureSubMenu.addItem(gOnItem)
+            gestureSubMenu.addItem(gOffItem)
+            gestureMenuItem.submenu = gestureSubMenu
+            menu.addItem(gestureMenuItem)
+        }
+        
+        // --- 设备列表 ---
         let deviceMenuItem = NSMenuItem(title: "设备列表", action: nil, keyEquivalent: "")
         let deviceSubMenu = NSMenu()
-        
         if AppState.shared.connectedDevices.isEmpty {
             deviceSubMenu.addItem(NSMenuItem(title: "无设备连接", action: nil, keyEquivalent: ""))
         } else {
@@ -70,16 +85,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 deviceSubMenu.addItem(item)
             }
         }
-        
         deviceSubMenu.addItem(NSMenuItem.separator())
         let scanItem = NSMenuItem(title: "扫描新设备...", action: #selector(scanDevices), keyEquivalent: "")
         scanItem.target = self
         deviceSubMenu.addItem(scanItem)
-        
         deviceMenuItem.submenu = deviceSubMenu
         menu.addItem(deviceMenuItem)
         
-        // --- 锁定设备界面 ---
+        // --- 锁定 ---
         menu.addItem(NSMenuItem.separator())
         let lockItem = NSMenuItem(title: "锁定移动设备 TouchPad 界面", action: #selector(toggleLock), keyEquivalent: "")
         lockItem.target = self
@@ -97,56 +110,49 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc func toggleLock() {
         AppState.shared.isLocked.toggle()
-        if AppState.shared.isLocked {
-            sendCommandToClient("CMD_LOCK")
-            NSLog("[TouchPad] 发送锁定指令")
-        } else {
-            sendCommandToClient("CMD_UNLOCK")
-            NSLog("[TouchPad] 发送解锁指令")
-        }
+        if AppState.shared.isLocked { sendCommandToClient("CMD_LOCK") }
+        else { sendCommandToClient("CMD_UNLOCK") }
+        rebuildMenu()
+    }
+    
+    @objc func enableGesture() {
+        AppState.shared.gestureEnabled = true
+        sendCommandToClient("CMD_GESTURE_ON")
+        NSLog("[TouchPad] CMD_GESTURE_ON sent")
+        rebuildMenu()
+    }
+    
+    @objc func disableGesture() {
+        AppState.shared.gestureEnabled = false
+        sendCommandToClient("CMD_GESTURE_OFF")
+        NSLog("[TouchPad] CMD_GESTURE_OFF sent")
         rebuildMenu()
     }
     
     @objc func changeModeBoth() {
         AppState.shared.inputMode = .both
+        // 切换广泛模式时，关闭手势
+        AppState.shared.gestureEnabled = false
+        sendCommandToClient("CMD_GESTURE_OFF")
         rebuildMenu()
-        NSLog("[TouchPad] 模式切换: 全部接收")
+        NSLog("[TouchPad] Mode: Both (Mouse)")
     }
     
     @objc func changeModeStylus() {
         AppState.shared.inputMode = .stylusOnly
         rebuildMenu()
-        NSLog("[TouchPad] 模式切换: 仅触控笔")
+        NSLog("[TouchPad] Mode: Stylus Only")
     }
     
     @objc func selectDevice(_ sender: NSMenuItem) {
         if let deviceId = sender.representedObject as? String {
             AppState.shared.activeDevice = deviceId
-            
-            // 【终极修复】三重保险机制：
-            // 1. 重置软件状态
-            AppState.shared.isMouseDown = false
-            
-            // 2. 强制调用底层鼠标释放（硬件级），解决切换瞬间的卡死问题
-            // 注意：这里不需要精确坐标，只需要释放按键动作
-            if let screen = NSScreen.main {
-                let point = CGPoint(x: screen.frame.width / 2, y: screen.frame.height / 2)
-                postMouseEvent(type: .leftMouseUp, location: point, button: .left)
-            }
-            
-            // 3. 通知 AppState 进行其他清理
-            AppState.shared.forceResetMouseState()
-            
             rebuildMenu()
-            NSLog("[TouchPad] 切换控制设备: \(deviceId)，已强制释放鼠标")
         }
     }
     
     @objc func scanDevices() {
-        NSLog("[TouchPad] 手动触发设备扫描...")
-        Thread {
-            setupAdbTunnel()
-        }.start()
+        Thread { setupAdbTunnel() }.start()
     }
     
     @objc func quitApp() {

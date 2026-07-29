@@ -1,0 +1,32 @@
+{
+  "": {
+    "dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/TouchPad.d",
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/TouchPad.o",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/master.swiftdeps"
+  },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift": {
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppDelegate.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppDelegate~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppDelegate.swiftdeps"
+  },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift": {
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppState.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppState~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/AppState.swiftdeps"
+  },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift": {
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/MouseController.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/MouseController~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/MouseController.swiftdeps"
+  },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift": {
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/NetworkManager.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/NetworkManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/NetworkManager.swiftdeps"
+  },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift": {
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/main.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/release/TouchPad.build/main.swiftdeps"
+  }
+}

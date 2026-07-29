@@ -1,0 +1,10 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "9b5c470370c6f0e65c28e4b4fef05fe913d34ada42f2751f4f03950b4c19b40d"
+build_start_time: [1785334897, 343896000]
+build_end_time: [1785334898, 780954000]
+inputs:
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift": [1785324474, 256881521]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift": [1785323937, 515584491]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift": [1785334890, 321101801]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift": [1785100684, 0]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift": [1785100684, 0]

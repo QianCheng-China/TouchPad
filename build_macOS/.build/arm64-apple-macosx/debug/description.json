@@ -1,0 +1,296 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.TouchPad-arm64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/sources",
+      "importPath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "TouchPad",
+      "moduleOutputPath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/Modules/TouchPad.swiftmodule",
+      "objects" : [
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppDelegate.swift.o",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppState.swift.o",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/MouseController.swift.o",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager.swift.o",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx11.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "TouchPad_main",
+        "-color-diagnostics",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g"
+      ],
+      "outputFileMapPath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/MouseController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/Modules/TouchPad.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"
+      ],
+      "tempsPath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "TouchPad" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "TouchPad",
+      "-incremental",
+      "-c",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift",
+      "-I",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx11.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "TouchPad_main",
+      "-color-diagnostics",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "TouchPad" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "enableAllTraits" : false
+  },
+  "writeCommands" : {
+    "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad-entitlement.plist"
+    },
+    "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/sources"
+    },
+    "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/AppState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/MouseController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.build/main.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/TouchPad.product/Objects.LinkFileList"
+    },
+    "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}
