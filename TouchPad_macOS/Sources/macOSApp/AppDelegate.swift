@@ -2,46 +2,39 @@ import Cocoa
 import ApplicationServices
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static let shared = AppDelegate()
     var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        NSLog("[TouchPad] 正在初始化...")
         NSApp.setActivationPolicy(.accessory)
-        
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        
         if let button = statusItem.button {
+            // 【修改】使用 pencil.tip 作为状态栏图标
             if let image = NSImage(systemSymbolName: "pencil.tip", accessibilityDescription: "TouchPad") {
-                image.isTemplate = true
+                image.isTemplate = true // 自动适应深色/浅色模式
                 button.image = image
                 button.toolTip = "TouchPad Control Center"
             } else {
+                // 备选方案：如果加载失败则显示文字
                 button.title = "T"
             }
-        } else {
-            NSLog("[TouchPad] 错误: 无法创建状态栏按钮")
-            return
         }
         
         rebuildMenu()
-        NotificationCenter.default.addObserver(forName: .deviceListChanged, object: nil, queue: .main) { _ in
-            self.rebuildMenu()
-        }
+        NotificationCenter.default.addObserver(forName: .deviceListChanged, object: nil, queue: .main) { _ in self.rebuildMenu() }
         
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
-        if !AXIsProcessTrustedWithOptions(options) {
-            NSLog("[TouchPad] 警告: 缺少辅助功能权限")
-        }
-        
+        _ = AXIsProcessTrustedWithOptions(options)
         startNetworkServices()
     }
-    
+
     func rebuildMenu() {
         let menu = NSMenu()
         
-        // --- 输入模式子菜单 ---
-        let modeMenuItem = NSMenuItem(title: "输入模式", action: nil, keyEquivalent: "")
+        // --- 输入模式 ---
+        let modeItem = NSMenuItem(title: "输入模式", action: nil, keyEquivalent: "")
         let modeSubMenu = NSMenu()
-        
         let stylusItem = NSMenuItem(title: "仅主动式触控笔", action: #selector(changeModeStylus), keyEquivalent: "")
         stylusItem.target = self
         stylusItem.state = (AppState.shared.inputMode == .stylusOnly) ? .on : .off
@@ -52,13 +45,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         modeSubMenu.addItem(stylusItem)
         modeSubMenu.addItem(bothItem)
-        modeMenuItem.submenu = modeSubMenu
-        menu.addItem(modeMenuItem)
+        modeItem.submenu = modeSubMenu
+        menu.addItem(modeItem)
         
-        // --- 设备列表子菜单 ---
+        // --- 手指触控板开关 ---
+        if AppState.shared.inputMode == .stylusOnly {
+            let trackpadItem = NSMenuItem(title: "将手指作为触控板输入", action: #selector(toggleTrackpad), keyEquivalent: "")
+            trackpadItem.target = self
+            trackpadItem.state = AppState.shared.trackpadEnabled ? .on : .off
+            menu.addItem(trackpadItem)
+        }
+        
+        // --- 缩放模式选择 ---
+        let zoomModeItem = NSMenuItem(title: "双指缩放模式", action: nil, keyEquivalent: "")
+        let zoomSubMenu = NSMenu()
+        
+        for mode in AppState.ZoomMode.allCases {
+            let item = NSMenuItem(title: mode.rawValue, action: #selector(changeZoomMode(_:)), keyEquivalent: "")
+            item.representedObject = mode
+            item.target = self
+            item.state = (AppState.shared.zoomMode == mode) ? .on : .off
+            zoomSubMenu.addItem(item)
+        }
+        zoomModeItem.submenu = zoomSubMenu
+        menu.addItem(zoomModeItem)
+        
+        // --- 设备列表 ---
+        menu.addItem(NSMenuItem.separator())
         let deviceMenuItem = NSMenuItem(title: "设备列表", action: nil, keyEquivalent: "")
         let deviceSubMenu = NSMenu()
-        
         if AppState.shared.connectedDevices.isEmpty {
             deviceSubMenu.addItem(NSMenuItem(title: "无设备连接", action: nil, keyEquivalent: ""))
         } else {
@@ -70,86 +85,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 deviceSubMenu.addItem(item)
             }
         }
-        
-        deviceSubMenu.addItem(NSMenuItem.separator())
-        let scanItem = NSMenuItem(title: "扫描新设备...", action: #selector(scanDevices), keyEquivalent: "")
-        scanItem.target = self
-        deviceSubMenu.addItem(scanItem)
-        
         deviceMenuItem.submenu = deviceSubMenu
         menu.addItem(deviceMenuItem)
         
-        // --- 锁定设备界面 ---
+        // --- 锁定与退出 ---
         menu.addItem(NSMenuItem.separator())
-        let lockItem = NSMenuItem(title: "锁定移动设备 TouchPad 界面", action: #selector(toggleLock), keyEquivalent: "")
+        let lockItem = NSMenuItem(title: "锁定移动设备", action: #selector(toggleLock), keyEquivalent: "")
         lockItem.target = self
         lockItem.state = AppState.shared.isLocked ? .on : .off
         menu.addItem(lockItem)
         
-        // --- 退出 ---
         menu.addItem(NSMenuItem.separator())
-        let quitItem = NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
-        
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+    
+    @objc func changeZoomMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? AppState.ZoomMode else { return }
+        AppState.shared.zoomMode = mode
+        rebuildMenu()
+    }
+    
+    @objc func toggleTrackpad() {
+        AppState.shared.trackpadEnabled.toggle()
+        let cmd = AppState.shared.trackpadEnabled ? "CMD_TRACKPAD_ON" : "CMD_TRACKPAD_OFF"
+        sendCommandToClient(cmd)
+        rebuildMenu()
     }
     
     @objc func toggleLock() {
         AppState.shared.isLocked.toggle()
-        if AppState.shared.isLocked {
-            sendCommandToClient("CMD_LOCK")
-            NSLog("[TouchPad] 发送锁定指令")
-        } else {
-            sendCommandToClient("CMD_UNLOCK")
-            NSLog("[TouchPad] 发送解锁指令")
-        }
+        sendCommandToClient(AppState.shared.isLocked ? "CMD_LOCK" : "CMD_UNLOCK")
         rebuildMenu()
     }
-    
     @objc func changeModeBoth() {
         AppState.shared.inputMode = .both
+        AppState.shared.trackpadEnabled = false
+        sendCommandToClient("CMD_TRACKPAD_OFF")
         rebuildMenu()
-        NSLog("[TouchPad] 模式切换: 全部接收")
     }
-    
-    @objc func changeModeStylus() {
-        AppState.shared.inputMode = .stylusOnly
-        rebuildMenu()
-        NSLog("[TouchPad] 模式切换: 仅触控笔")
-    }
-    
-    @objc func selectDevice(_ sender: NSMenuItem) {
-        if let deviceId = sender.representedObject as? String {
-            AppState.shared.activeDevice = deviceId
-            
-            // 【终极修复】三重保险机制：
-            // 1. 重置软件状态
-            AppState.shared.isMouseDown = false
-            
-            // 2. 强制调用底层鼠标释放（硬件级），解决切换瞬间的卡死问题
-            // 注意：这里不需要精确坐标，只需要释放按键动作
-            if let screen = NSScreen.main {
-                let point = CGPoint(x: screen.frame.width / 2, y: screen.frame.height / 2)
-                postMouseEvent(type: .leftMouseUp, location: point, button: .left)
-            }
-            
-            // 3. 通知 AppState 进行其他清理
-            AppState.shared.forceResetMouseState()
-            
-            rebuildMenu()
-            NSLog("[TouchPad] 切换控制设备: \(deviceId)，已强制释放鼠标")
-        }
-    }
-    
-    @objc func scanDevices() {
-        NSLog("[TouchPad] 手动触发设备扫描...")
-        Thread {
-            setupAdbTunnel()
-        }.start()
-    }
-    
-    @objc func quitApp() {
-        NSApp.terminate(nil)
-    }
+    @objc func changeModeStylus() { AppState.shared.inputMode = .stylusOnly; rebuildMenu() }
+    @objc func selectDevice(_ sender: NSMenuItem) { AppState.shared.activeDevice = sender.representedObject as? String; rebuildMenu() }
+    @objc func quitApp() { NSApp.terminate(nil) }
 }

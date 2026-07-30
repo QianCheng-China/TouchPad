@@ -14,14 +14,21 @@ class AppState: ObservableObject {
         case stylusOnly = "仅触控笔"
     }
     
+    // 缩放模式枚举
+    enum ZoomMode: String, CaseIterable {
+        case system = "系统缩放"      // 适用于 Word, PDF, 系统界面
+        case browser = "浏览器缩放"    // 适用于 Safari, Chrome
+    }
+    
     @Published var inputMode: InputMode = .stylusOnly
     @Published var connectedDevices: [String] = []
     @Published var activeDevice: String? = nil
     @Published var isMouseDown: Bool = false
     @Published var isLocked: Bool = false
+    @Published var trackpadEnabled: Bool = false
     
-    // 手势开关
-    @Published var gestureEnabled: Bool = false
+    // 当前选中的缩放模式
+    @Published var zoomMode: ZoomMode = .system
     
     func registerDevice(_ id: String) {
         DispatchQueue.main.async {

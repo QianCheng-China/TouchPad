@@ -2,43 +2,39 @@ import Cocoa
 import ApplicationServices
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static let shared = AppDelegate()
     var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        NSLog("[TouchPad] 正在初始化...")
         NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem.button {
+            // 【修改】使用 pencil.tip 作为状态栏图标
             if let image = NSImage(systemSymbolName: "pencil.tip", accessibilityDescription: "TouchPad") {
-                image.isTemplate = true
+                image.isTemplate = true // 自动适应深色/浅色模式
                 button.image = image
                 button.toolTip = "TouchPad Control Center"
             } else {
+                // 备选方案：如果加载失败则显示文字
                 button.title = "T"
             }
-        } else {
-            NSLog("[TouchPad] 错误: 无法创建状态栏按钮")
-            return
         }
         
         rebuildMenu()
         NotificationCenter.default.addObserver(forName: .deviceListChanged, object: nil, queue: .main) { _ in self.rebuildMenu() }
         
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
-        if !AXIsProcessTrustedWithOptions(options) {
-            NSLog("[TouchPad] 警告: 缺少辅助功能权限")
-        }
+        _ = AXIsProcessTrustedWithOptions(options)
         startNetworkServices()
     }
 
     func rebuildMenu() {
         let menu = NSMenu()
         
-        // --- 输入模式子菜单 ---
-        let modeMenuItem = NSMenuItem(title: "输入模式", action: nil, keyEquivalent: "")
+        // --- 输入模式 ---
+        let modeItem = NSMenuItem(title: "输入模式", action: nil, keyEquivalent: "")
         let modeSubMenu = NSMenu()
-        
         let stylusItem = NSMenuItem(title: "仅主动式触控笔", action: #selector(changeModeStylus), keyEquivalent: "")
         stylusItem.target = self
         stylusItem.state = (AppState.shared.inputMode == .stylusOnly) ? .on : .off
@@ -49,29 +45,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         modeSubMenu.addItem(stylusItem)
         modeSubMenu.addItem(bothItem)
-        modeMenuItem.submenu = modeSubMenu
-        menu.addItem(modeMenuItem)
+        modeItem.submenu = modeSubMenu
+        menu.addItem(modeItem)
         
-        // --- 手势功能子菜单 (仅在触控笔模式下可用) ---
+        // --- 手指触控板开关 ---
         if AppState.shared.inputMode == .stylusOnly {
-            let gestureMenuItem = NSMenuItem(title: "手指功能", action: nil, keyEquivalent: "")
-            let gestureSubMenu = NSMenu()
-            
-            let gOnItem = NSMenuItem(title: "缩放与平移", action: #selector(enableGesture), keyEquivalent: "")
-            gOnItem.target = self
-            gOnItem.state = (AppState.shared.gestureEnabled) ? .on : .off
-            
-            let gOffItem = NSMenuItem(title: "忽略触摸", action: #selector(disableGesture), keyEquivalent: "")
-            gOffItem.target = self
-            gOffItem.state = (!AppState.shared.gestureEnabled) ? .on : .off
-            
-            gestureSubMenu.addItem(gOnItem)
-            gestureSubMenu.addItem(gOffItem)
-            gestureMenuItem.submenu = gestureSubMenu
-            menu.addItem(gestureMenuItem)
+            let trackpadItem = NSMenuItem(title: "将手指作为触控板输入", action: #selector(toggleTrackpad), keyEquivalent: "")
+            trackpadItem.target = self
+            trackpadItem.state = AppState.shared.trackpadEnabled ? .on : .off
+            menu.addItem(trackpadItem)
         }
         
+        // --- 缩放模式选择 ---
+        let zoomModeItem = NSMenuItem(title: "双指缩放模式", action: nil, keyEquivalent: "")
+        let zoomSubMenu = NSMenu()
+        
+        for mode in AppState.ZoomMode.allCases {
+            let item = NSMenuItem(title: mode.rawValue, action: #selector(changeZoomMode(_:)), keyEquivalent: "")
+            item.representedObject = mode
+            item.target = self
+            item.state = (AppState.shared.zoomMode == mode) ? .on : .off
+            zoomSubMenu.addItem(item)
+        }
+        zoomModeItem.submenu = zoomSubMenu
+        menu.addItem(zoomModeItem)
+        
         // --- 设备列表 ---
+        menu.addItem(NSMenuItem.separator())
         let deviceMenuItem = NSMenuItem(title: "设备列表", action: nil, keyEquivalent: "")
         let deviceSubMenu = NSMenu()
         if AppState.shared.connectedDevices.isEmpty {
@@ -85,77 +85,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 deviceSubMenu.addItem(item)
             }
         }
-        deviceSubMenu.addItem(NSMenuItem.separator())
-        let scanItem = NSMenuItem(title: "扫描新设备...", action: #selector(scanDevices), keyEquivalent: "")
-        scanItem.target = self
-        deviceSubMenu.addItem(scanItem)
         deviceMenuItem.submenu = deviceSubMenu
         menu.addItem(deviceMenuItem)
         
-        // --- 锁定 ---
+        // --- 锁定与退出 ---
         menu.addItem(NSMenuItem.separator())
-        let lockItem = NSMenuItem(title: "锁定移动设备 TouchPad 界面", action: #selector(toggleLock), keyEquivalent: "")
+        let lockItem = NSMenuItem(title: "锁定移动设备", action: #selector(toggleLock), keyEquivalent: "")
         lockItem.target = self
         lockItem.state = AppState.shared.isLocked ? .on : .off
         menu.addItem(lockItem)
         
-        // --- 退出 ---
         menu.addItem(NSMenuItem.separator())
-        let quitItem = NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
-        
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+    
+    @objc func changeZoomMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? AppState.ZoomMode else { return }
+        AppState.shared.zoomMode = mode
+        rebuildMenu()
+    }
+    
+    @objc func toggleTrackpad() {
+        AppState.shared.trackpadEnabled.toggle()
+        let cmd = AppState.shared.trackpadEnabled ? "CMD_TRACKPAD_ON" : "CMD_TRACKPAD_OFF"
+        sendCommandToClient(cmd)
+        rebuildMenu()
     }
     
     @objc func toggleLock() {
         AppState.shared.isLocked.toggle()
-        if AppState.shared.isLocked { sendCommandToClient("CMD_LOCK") }
-        else { sendCommandToClient("CMD_UNLOCK") }
+        sendCommandToClient(AppState.shared.isLocked ? "CMD_LOCK" : "CMD_UNLOCK")
         rebuildMenu()
     }
-    
-    @objc func enableGesture() {
-        AppState.shared.gestureEnabled = true
-        sendCommandToClient("CMD_GESTURE_ON")
-        NSLog("[TouchPad] CMD_GESTURE_ON sent")
-        rebuildMenu()
-    }
-    
-    @objc func disableGesture() {
-        AppState.shared.gestureEnabled = false
-        sendCommandToClient("CMD_GESTURE_OFF")
-        NSLog("[TouchPad] CMD_GESTURE_OFF sent")
-        rebuildMenu()
-    }
-    
     @objc func changeModeBoth() {
         AppState.shared.inputMode = .both
-        // 切换广泛模式时，关闭手势
-        AppState.shared.gestureEnabled = false
-        sendCommandToClient("CMD_GESTURE_OFF")
+        AppState.shared.trackpadEnabled = false
+        sendCommandToClient("CMD_TRACKPAD_OFF")
         rebuildMenu()
-        NSLog("[TouchPad] Mode: Both (Mouse)")
     }
-    
-    @objc func changeModeStylus() {
-        AppState.shared.inputMode = .stylusOnly
-        rebuildMenu()
-        NSLog("[TouchPad] Mode: Stylus Only")
-    }
-    
-    @objc func selectDevice(_ sender: NSMenuItem) {
-        if let deviceId = sender.representedObject as? String {
-            AppState.shared.activeDevice = deviceId
-            rebuildMenu()
-        }
-    }
-    
-    @objc func scanDevices() {
-        Thread { setupAdbTunnel() }.start()
-    }
-    
-    @objc func quitApp() {
-        NSApp.terminate(nil)
-    }
+    @objc func changeModeStylus() { AppState.shared.inputMode = .stylusOnly; rebuildMenu() }
+    @objc func selectDevice(_ sender: NSMenuItem) { AppState.shared.activeDevice = sender.representedObject as? String; rebuildMenu() }
+    @objc func quitApp() { NSApp.terminate(nil) }
 }

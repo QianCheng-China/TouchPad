@@ -68,12 +68,8 @@ class MainActivity : ComponentActivity() {
                             if (outputStream != null) {
                                 outputStream!!.write(msg.toByteArray())
                                 outputStream!!.flush()
-                            } else {
-                                break
-                            }
-                        } catch (_: Exception) {
-                            socket = null; outputStream = null; break
-                        }
+                            } else { break }
+                        } catch (_: Exception) { socket = null; outputStream = null; break }
                     }
                 } catch (_: Exception) {}
                 delay(1000)
@@ -86,15 +82,9 @@ class MainActivity : ComponentActivity() {
                     factory = { context ->
                         DrawingPadView(context).apply {
                             drawingPadView = this
-                            // 原有指令回调
-                            onCommandSent = { action: String, tool: String, x: Int, y: Int ->
-                                sendChannel.trySend("$action,$tool,$x,$y\n")
-                            }
-                            // 新增手势指令回调
-                            onGestureCommand = { type: String, dx: Float, dy: Float ->
-                                // 格式: GESTURE,type,dx,dy
-                                // 保留两位小数避免过长
-                                sendChannel.trySend("GESTURE,$type,${"%.2f".format(dx)},${"%.2f".format(dy)}\n")
+                            // 修正：匹配新的单参数接口
+                            onCommandSent = { cmd: String ->
+                                sendChannel.trySend("$cmd\n")
                             }
                         }
                     },
@@ -163,9 +153,17 @@ class MainActivity : ComponentActivity() {
                 when {
                     line == "CMD_LOCK" -> runOnUiThread { enableLockMode() }
                     line == "CMD_UNLOCK" -> runOnUiThread { disableLockMode() }
-                    // 新增手势开关
-                    line == "CMD_GESTURE_ON" -> runOnUiThread { drawingPadView?.setGestureMode(true) }
-                    line == "CMD_GESTURE_OFF" -> runOnUiThread { drawingPadView?.setGestureMode(false) }
+
+                    // 处理触控板模式开关
+                    line == "CMD_TRACKPAD_ON" -> runOnUiThread {
+                        drawingPadView?.setTrackpadMode(true)
+                        println("[Android] 触控板模式: 开启")
+                    }
+                    line == "CMD_TRACKPAD_OFF" -> runOnUiThread {
+                        drawingPadView?.setTrackpadMode(false)
+                        println("[Android] 触控板模式: 关闭")
+                    }
+
                     line.startsWith("SYNC_RESP:") -> {
                         val state = line.split(":").getOrNull(1)
                         if (state == "LOCKED") runOnUiThread { enableLockMode() }

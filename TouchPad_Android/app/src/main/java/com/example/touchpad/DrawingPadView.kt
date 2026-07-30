@@ -5,151 +5,85 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
 import android.view.View
-import kotlin.math.abs
 
 class DrawingPadView(context: Context) : View(context) {
     private val gridPaint = Paint()
-    private val gridSize = 80f
-    var onCommandSent: ((action: String, tool: String, x: Int, y: Int) -> Unit)? = null
-    var onGestureCommand: ((type: String, dx: Float, dy: Float) -> Unit)? = null
-
-    private var gestureMode = false
-    private var lastFingerX = 0f
-    private var lastFingerY = 0f
-    private var isGestureActive = false
-    private var isZooming = false
-
-    private val scaleDetector: ScaleGestureDetector by lazy {
-        ScaleGestureDetector(context, ScaleListener())
-    }
+    var onCommandSent: ((cmd: String) -> Unit)? = null
+    private var isTrackpadMode = false
 
     init {
         gridPaint.color = Color.parseColor("#EEEEEE")
         gridPaint.strokeWidth = 1f
     }
 
-    fun setGestureMode(enabled: Boolean) {
-        gestureMode = enabled
+    fun setTrackpadMode(enabled: Boolean) {
+        isTrackpadMode = enabled
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         var x = 0f
-        while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), gridPaint); x += gridSize }
+        while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), gridPaint); x += 80f }
         var y = 0f
-        while (y < height) { canvas.drawLine(0f, y, width.toFloat(), y, gridPaint); y += gridSize }
+        while (y < height) { canvas.drawLine(0f, y, width.toFloat(), y, gridPaint); y += 80f }
     }
 
-    private fun getToolType(event: MotionEvent): String {
-        return if (event.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) "STYLUS" else "FINGER"
-    }
-
+    // 处理点击和滑动
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val tool = getToolType(event)
-        if (tool == "STYLUS") {
-            handleStylusEvent(event)
+        if (event.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+            handleStylus(event)
             return true
         }
-
-        if (gestureMode) {
-            scaleDetector.onTouchEvent(event)
-            handleFingerGesture(event)
-            return true
-        } else {
-            handleStylusEvent(event)
+        if (isTrackpadMode) {
+            handleMultiTouch(event)
             return true
         }
+        return false
     }
 
+    // 【关键修复】处理悬停事件 (必须重写此方法)
     override fun onHoverEvent(event: MotionEvent): Boolean {
-        handleStylusEvent(event)
-        return true
+        if (event.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+            handleStylus(event)
+            return true
+        }
+        return super.onHoverEvent(event)
     }
 
-    private fun handleStylusEvent(event: MotionEvent) {
-        val tool = getToolType(event)
+    private fun handleStylus(event: MotionEvent) {
         val normX = (event.x / width * 10000f).toInt()
         val normY = (event.y / height * 10000f).toInt()
 
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> onCommandSent?.invoke("DOWN", tool, normX, normY)
-            MotionEvent.ACTION_MOVE -> {
-                val historySize = event.historySize
-                for (i in 0 until historySize) {
-                    val histX = (event.getHistoricalX(i) / width * 10000f).toInt()
-                    val histY = (event.getHistoricalY(i) / height * 10000f).toInt()
-                    onCommandSent?.invoke("MOVE", tool, histX, histY)
-                }
-                onCommandSent?.invoke("MOVE", tool, normX, normY)
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> onCommandSent?.invoke("UP", tool, normX, normY)
-            MotionEvent.ACTION_HOVER_ENTER, MotionEvent.ACTION_HOVER_MOVE -> {
-                val historySize = event.historySize
-                for (i in 0 until historySize) {
-                    val histX = (event.getHistoricalX(i) / width * 10000f).toInt()
-                    val histY = (event.getHistoricalY(i) / height * 10000f).toInt()
-                    onCommandSent?.invoke("HOVER", tool, histX, histY)
-                }
-                onCommandSent?.invoke("HOVER", tool, normX, normY)
-            }
-        }
-    }
-
-    private fun handleFingerGesture(event: MotionEvent) {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                lastFingerX = event.x
-                lastFingerY = event.y
-                isGestureActive = true
-                isZooming = false
-            }
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                isZooming = true
-                lastFingerX = event.x
-                lastFingerY = event.y
-            }
-            MotionEvent.ACTION_MOVE -> {
-                // 【关键修复】如果手指数量<=1，强制禁止进入缩放逻辑
-                if (event.pointerCount <= 1) {
-                    isZooming = false
-                }
-
-                // 如果是缩放模式，直接返回，不再处理滚动
-                if (isZooming) return
-
-                if (!scaleDetector.isInProgress && isGestureActive) {
-                    val dx = event.x - lastFingerX
-                    val dy = event.y - lastFingerY
-                    if (abs(dx) > 2 || abs(dy) > 2) {
-                        onGestureCommand?.invoke("SCROLL", dx * 1.5f, dy * 1.5f)
-                    }
-                }
-                lastFingerX = event.x
-                lastFingerY = event.y
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                isGestureActive = false
-                isZooming = false
-            }
+            MotionEvent.ACTION_DOWN -> onCommandSent?.invoke("PEN_DOWN,$normX,$normY")
+            MotionEvent.ACTION_MOVE -> onCommandSent?.invoke("PEN_MOVE,$normX,$normY")
+            MotionEvent.ACTION_UP -> onCommandSent?.invoke("PEN_UP,$normX,$normY")
+            // 捕获悬停动作
+            MotionEvent.ACTION_HOVER_ENTER, MotionEvent.ACTION_HOVER_MOVE -> onCommandSent?.invoke("PEN_HOVER,$normX,$normY")
         }
     }
 
-    private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            isZooming = true
-            return true
+    private fun handleMultiTouch(event: MotionEvent) {
+        if (event.pointerCount > 4) return
+
+        val count = event.pointerCount
+        val sb = StringBuilder("TOUCH,$count")
+
+        for (i in 0 until count) {
+            val id = event.getPointerId(i)
+            val x = (event.getX(i) / width * 10000f).toInt()
+            val y = (event.getY(i) / height * 10000f).toInt()
+            sb.append(",$id,$x,$y")
         }
 
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val factor = detector.scaleFactor
-            // 只有当确实有两个手指时才发送指令
-            if (detector.currentSpan > 0 && factor != 1.0f) {
-                onGestureCommand?.invoke("ZOOM", factor, 0f)
-            }
-            return true
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN,
+            MotionEvent.ACTION_MOVE,
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_POINTER_UP,
+            MotionEvent.ACTION_CANCEL -> onCommandSent?.invoke(sb.toString())
         }
-        override fun onScaleEnd(detector: ScaleGestureDetector) {}
     }
 }
