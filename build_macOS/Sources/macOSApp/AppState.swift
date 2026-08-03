@@ -16,8 +16,44 @@ class AppState: ObservableObject {
     
     // 缩放模式枚举
     enum ZoomMode: String, CaseIterable {
-        case system = "系统缩放"      // 适用于 Word, PDF, 系统界面
-        case browser = "浏览器缩放"    // 适用于 Safari, Chrome
+        case smart = "智能缩放"
+        case system = "系统缩放"
+        case browser = "浏览器缩放"
+        case keyboard = "键盘缩放"
+    }
+    
+    // 【新增】手势灵敏度枚举
+    enum Sensitivity: String, CaseIterable {
+        case low = "低灵敏度"
+        case medium = "中灵敏度"
+        case high = "高灵敏度"
+        
+        // 滑动触发阈值 (三指/四指滑动)
+        var swipeThreshold: CGFloat {
+            switch self {
+            case .low: return 90
+            case .medium: return 60
+            case .high: return 40
+            }
+        }
+        
+        // 捏合/张开触发阈值 (四指)
+        var pinchThreshold: CGFloat {
+            switch self {
+            case .low: return 600
+            case .medium: return 400
+            case .high: return 250
+            }
+        }
+        
+        // 缩放步进阈值
+        var zoomStepThreshold: CGFloat {
+            switch self {
+            case .low: return 40
+            case .medium: return 30
+            case .high: return 20
+            }
+        }
     }
     
     @Published var inputMode: InputMode = .stylusOnly
@@ -27,8 +63,10 @@ class AppState: ObservableObject {
     @Published var isLocked: Bool = false
     @Published var trackpadEnabled: Bool = false
     
-    // 当前选中的缩放模式
-    @Published var zoomMode: ZoomMode = .system
+    @Published var zoomMode: ZoomMode = .smart
+    
+    // 【新增】手势灵敏度 (默认中灵敏度)
+    @Published var sensitivity: Sensitivity = .medium
     
     func registerDevice(_ id: String) {
         DispatchQueue.main.async {
