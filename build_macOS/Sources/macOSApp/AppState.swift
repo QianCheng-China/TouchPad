@@ -16,10 +16,11 @@ class AppState: ObservableObject {
     
     // 缩放模式枚举
     enum ZoomMode: String, CaseIterable {
-        case smart = "智能缩放"
-        case system = "系统缩放"
-        case browser = "浏览器缩放"
-        case keyboard = "键盘缩放"
+        case smart = "智能缩放"        // 自动检测前台应用，选择最佳缩放方式
+        case native = "原生缩放"       // 使用IOHIDEvent注入真正的捏合缩放事件
+        case system = "系统缩放"       // Control + 滚轮（需在辅助功能中开启缩放）
+        case browser = "浏览器缩放"    // Command + 滚轮（适用于 Safari, Chrome, Preview 等）
+        case keyboard = "键盘缩放"     // Command + = / Command + -（适用于 Word, Excel, PS 等）
     }
     
     // 【新增】手势灵敏度枚举

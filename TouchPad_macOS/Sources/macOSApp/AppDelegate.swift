@@ -10,13 +10,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem.button {
-            // 【修改】使用 pencil.tip 作为状态栏图标
             if let image = NSImage(systemSymbolName: "pencil.tip", accessibilityDescription: "TouchPad") {
-                image.isTemplate = true // 自动适应深色/浅色模式
+                image.isTemplate = true
                 button.image = image
                 button.toolTip = "TouchPad Control Center"
             } else {
-                // 备选方案：如果加载失败则显示文字
                 button.title = "T"
             }
         }
@@ -26,6 +24,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
+        
+        // 【新增】初始化 IOHIDEvent 系统，用于原生缩放
+        initHIDEventSystem()
+        
         startNetworkServices()
     }
 
@@ -70,6 +72,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         zoomModeItem.submenu = zoomSubMenu
         menu.addItem(zoomModeItem)
         
+        // --- 【新增】手势灵敏度选择 ---
+        let sensitivityItem = NSMenuItem(title: "手势灵敏度", action: nil, keyEquivalent: "")
+        let sensitivitySubMenu = NSMenu()
+        
+        for level in AppState.Sensitivity.allCases {
+            let item = NSMenuItem(title: level.rawValue, action: #selector(changeSensitivity(_:)), keyEquivalent: "")
+            item.representedObject = level
+            item.target = self
+            item.state = (AppState.shared.sensitivity == level) ? .on : .off
+            sensitivitySubMenu.addItem(item)
+        }
+        sensitivityItem.submenu = sensitivitySubMenu
+        menu.addItem(sensitivityItem)
+        
         // --- 设备列表 ---
         menu.addItem(NSMenuItem.separator())
         let deviceMenuItem = NSMenuItem(title: "设备列表", action: nil, keyEquivalent: "")
@@ -103,6 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func changeZoomMode(_ sender: NSMenuItem) {
         guard let mode = sender.representedObject as? AppState.ZoomMode else { return }
         AppState.shared.zoomMode = mode
+        rebuildMenu()
+    }
+    
+    // 【新增】切换灵敏度
+    @objc func changeSensitivity(_ sender: NSMenuItem) {
+        guard let level = sender.representedObject as? AppState.Sensitivity else { return }
+        AppState.shared.sensitivity = level
         rebuildMenu()
     }
     

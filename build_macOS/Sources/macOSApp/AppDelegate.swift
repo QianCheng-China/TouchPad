@@ -24,6 +24,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
+        
+        // 【新增】初始化 IOHIDEvent 系统，用于原生缩放
+        initHIDEventSystem()
+        
         startNetworkServices()
     }
 
