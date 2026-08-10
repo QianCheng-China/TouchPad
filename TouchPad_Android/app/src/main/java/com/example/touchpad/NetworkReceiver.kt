@@ -14,25 +14,53 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
 
     fun connect() {
         if (isRunning) {
-            Log.w("NetworkReceiver", "Already running")
-            return
+            Log.w("NetworkReceiver", "Already running, forcing restart")
+            disconnect()
         }
         isRunning = true
+
         job = CoroutineScope(Dispatchers.IO).launch {
+            var attempts = 0
+            var connected = false
+
+            // 【修改】加快重试速度，捕捉瞬态连接失败
+            while (isRunning && attempts < 10) {
+                try {
+                    Log.d("NetworkReceiver", "Connecting to ${Constants.HOST}:${Constants.VIDEO_PORT} (Attempt ${attempts + 1})")
+
+                    socket?.close()
+                    socket = null
+
+                    socket = Socket(Constants.HOST, Constants.VIDEO_PORT)
+                    socket?.soTimeout = 5000
+
+                    connected = true
+                    Log.d("NetworkReceiver", "Connected successfully!")
+                    break
+                } catch (e: Exception) {
+                    attempts++
+                    socket?.close()
+                    socket = null
+
+                    if (isRunning && attempts < 10) {
+                        Log.w("NetworkReceiver", "Connection failed: ${e.message}. Retrying in 100ms...")
+                        delay(100) // 缩短延迟至 100ms
+                    } else {
+                        Log.e("NetworkReceiver", "Failed to connect after $attempts attempts")
+                    }
+                }
+            }
+
+            if (!connected) {
+                disconnect()
+                return@launch
+            }
+
             try {
-                Log.d("NetworkReceiver", "Connecting to ${Constants.HOST}:${Constants.VIDEO_PORT}")
-                socket = Socket(Constants.HOST, Constants.VIDEO_PORT)
-
-                // 【关键修复】设置超时时间，避免永久阻塞
-                socket?.soTimeout = 5000
-
                 val input = socket!!.getInputStream()
-                Log.d("NetworkReceiver", "Connected successfully!")
-
                 while (isRunning) {
                     val packet = readPacket(input)
                     if (packet != null) {
-                        Log.d("NetworkReceiver", "Received packet size: ${packet.size}")
                         onFrameReceived(packet)
                     } else {
                         Log.w("NetworkReceiver", "readPacket returned null (EOF or Error)")
@@ -40,22 +68,18 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("NetworkReceiver", "Connection error: ${e.message}", e)
-                e.printStackTrace()
+                Log.e("NetworkReceiver", "Connection error: ${e.message}")
             } finally {
                 disconnect()
             }
         }
     }
 
-    private fun readFully(input: InputStream, buf: ByteArray, offset: Int, len: Int): Boolean {
+    private fun readFully(input: InputStream, buf: ByteArray, len: Int): Boolean {
         var readTotal = 0
         while (readTotal < len) {
-            val r = input.read(buf, offset + readTotal, len - readTotal)
-            if (r == -1) {
-                Log.e("NetworkReceiver", "readFully failed: EOF reached (read: $readTotal, expected: $len)")
-                return false
-            }
+            val r = input.read(buf, readTotal, len - readTotal)
+            if (r == -1) return false
             readTotal += r
         }
         return true
@@ -63,36 +87,22 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
 
     private fun readPacket(input: InputStream): ByteArray? {
         try {
-            // Read type (1 byte)
             val type = input.read()
-            if (type == -1) {
-                Log.e("NetworkReceiver", "readPacket: Type is -1 (EOF)")
-                return null
-            }
+            if (type == -1) return null
 
-            // Read length (4 bytes big-endian)
             val lengthBytes = ByteArray(4)
-            if (!readFully(input, lengthBytes, 0, 4)) {
-                Log.e("NetworkReceiver", "readPacket: Failed to read length bytes")
-                return null
-            }
-            val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).int
+            if (!readFully(input, lengthBytes, 4)) return null
 
+            val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).int
             if (length <= 0 || length > Constants.BUFFER_SIZE * 10) {
                 Log.e("NetworkReceiver", "readPacket: Invalid packet length: $length")
                 return null
             }
 
-            // Read payload
             val payload = ByteArray(length)
-            if (!readFully(input, payload, 0, length)) {
-                Log.e("NetworkReceiver", "readPacket: Failed to read payload bytes (len: $length)")
-                return null
-            }
-
+            if (!readFully(input, payload, length)) return null
             return payload
         } catch (e: Exception) {
-            Log.e("NetworkReceiver", "readPacket exception: ${e.message}")
             return null
         }
     }
@@ -103,6 +113,8 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
         try {
             socket?.close()
         } catch (_: Exception) {}
+        socket = null
         job?.cancel()
+        job = null
     }
 }
