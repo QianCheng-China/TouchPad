@@ -19,6 +19,7 @@ public func setupAdbTunnel() {
         cleanTask.arguments = ["-d", "com.apple.quarantine", bundlePath]
         try? cleanTask.run()
         cleanTask.waitUntilExit()
+
         let chmodTask = Process()
         chmodTask.executableURL = URL(fileURLWithPath: "/bin/chmod")
         chmodTask.arguments = ["+x", bundlePath]
@@ -26,6 +27,7 @@ public func setupAdbTunnel() {
         chmodTask.waitUntilExit()
         paths.append(bundlePath)
     }
+    
     paths.append(contentsOf: [
         "/usr/local/bin/adb",
         "/opt/homebrew/bin/adb",
@@ -50,17 +52,23 @@ public func setupAdbTunnel() {
     task.arguments = ["devices"]
     let pipe = Pipe()
     task.standardOutput = pipe
+    
     do {
         try task.run()
         task.waitUntilExit()
-    } catch { NSLog("[TouchPad] ADB 执行失败: \(error)"); return }
+    } catch {
+        NSLog("[TouchPad] ADB 执行失败: \(error)")
+        return
+    }
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output = String(data: data, encoding: .utf8) ?? ""
     let lines = output.components(separatedBy: "\n")
     
     for line in lines {
-        if line.contains("List of devices attached") || line.isEmpty { continue }
+        if line.contains("List of devices attached") || line.isEmpty {
+            continue
+        }
         let parts = line.split(whereSeparator: { $0.isWhitespace })
         if parts.count >= 2 && String(parts[1]) == "device" {
             let serial = String(parts[0])
@@ -98,12 +106,16 @@ func runAdbCommand(path: String, serial: String) {
                 nameTask.arguments = ["-s", serial, "shell", "settings", "get", "secure", "bluetooth_name"]
                 let namePipe = Pipe()
                 nameTask.standardOutput = namePipe
+                
                 do {
                     try nameTask.run()
                     nameTask.waitUntilExit()
+                    
                     let nameData = namePipe.fileHandleForReading.readDataToEndOfFile()
                     var deviceName = String(data: nameData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    if deviceName.isEmpty { deviceName = serial }
+                    if deviceName.isEmpty {
+                        deviceName = serial
+                    }
                     AppState.shared.registerDevice(deviceName)
                 } catch {
                     AppState.shared.registerDevice(serial)
@@ -151,11 +163,14 @@ func startTcpServer() {
                 accept(listener, $0, &clientAddrLen)
             }
         }
+        
         if clientSock > 0 {
             var noDelay: Int32 = 1
             setsockopt(clientSock, IPPROTO_TCP, TCP_NODELAY, &noDelay, socklen_t(MemoryLayout<Int32>.size))
             currentClientSocket = clientSock
-            DispatchQueue.global().async { handleClient(sock: clientSock) }
+            DispatchQueue.global().async {
+                handleClient(sock: clientSock)
+            }
         }
     }
 }
@@ -164,9 +179,12 @@ func handleClient(sock: Int32) {
     var buffer = [UInt8](repeating: 0, count: 1024)
     var recvStr = ""
     var deviceId: String? = nil
+    
     while true {
         let len = recv(sock, &buffer, buffer.count, 0)
-        if len <= 0 { break }
+        if len <= 0 {
+            break
+        }
         
         let chunkData = Data(bytes: &buffer, count: Int(len))
         if let chunk = String(data: chunkData, encoding: .utf8) {
@@ -177,26 +195,36 @@ func handleClient(sock: Int32) {
             let msg = String(recvStr[..<range.lowerBound])
             recvStr = String(recvStr[range.upperBound...])
             let cleanMsg = msg.trimmingCharacters(in: .whitespaces)
-            if cleanMsg.isEmpty { continue }
+            
+            if cleanMsg.isEmpty {
+                continue
+            }
             
             if cleanMsg.hasPrefix("IDENT,") {
                 let name = cleanMsg.replacingOccurrences(of: "IDENT,", with: "")
                 deviceId = name
-                AppState.shared.isMouseDown = false
                 AppState.shared.registerDevice(name)
                 continue
             }
+            
             if cleanMsg == "SYNC_REQ" {
                 let resp = AppState.shared.isLocked ? "SYNC_RESP:LOCKED" : "SYNC_RESP:UNLOCKED"
                 sendCommandToClient(resp)
                 continue
             }
+            
             if let id = deviceId {
                 processCommand(cleanMsg, from: id)
             }
         }
     }
-    if let id = deviceId { AppState.shared.removeDevice(id) }
-    if currentClientSocket == sock { currentClientSocket = nil }
+    
+    // 连接断开清理逻辑
+    if let id = deviceId {
+        AppState.shared.removeDevice(id)
+    }
+    if currentClientSocket == sock {
+        currentClientSocket = nil
+    }
     close(sock)
 }
