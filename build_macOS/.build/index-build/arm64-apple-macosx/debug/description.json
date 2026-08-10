@@ -40,6 +40,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"
         },
         {
@@ -59,6 +63,7 @@
         "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/AppState.swift.o",
         "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/MouseController.swift.o",
         "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager.swift.o",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/ScreenStreamer.swift.o",
         "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -114,6 +119,7 @@
         "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift",
         "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift",
         "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift",
+        "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift",
         "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift"
       ],
       "tempsPath" : "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build",
@@ -134,6 +140,7 @@
       "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift",
       "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift",
       "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift",
+      "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift",
       "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift",
       "-I",
       "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/Modules",
@@ -216,6 +223,10 @@
         {
           "kind" : "file",
           "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift"
         },
         {
           "kind" : "file",

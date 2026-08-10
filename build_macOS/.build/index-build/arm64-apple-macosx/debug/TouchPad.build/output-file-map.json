@@ -26,6 +26,12 @@
     "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager~partial.swiftmodule",
     "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/NetworkManager.swiftdeps"
   },
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift": {
+    "dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/ScreenStreamer.d",
+    "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/ScreenStreamer.swift.o",
+    "swiftmodule": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/ScreenStreamer~partial.swiftmodule",
+    "swift-dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/ScreenStreamer.swiftdeps"
+  },
   "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift": {
     "dependencies": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/main.d",
     "object": "/Users/admin/Desktop/TouchTablet/build_macOS/.build/index-build/arm64-apple-macosx/debug/TouchPad.build/main.swift.o",

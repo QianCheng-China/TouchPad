@@ -13,23 +13,19 @@ func startNetworkServices() {
 
 public func setupAdbTunnel() {
     var paths = [String]()
-    
     if let bundlePath = Bundle.main.path(forResource: "adb", ofType: nil) {
         let cleanTask = Process()
         cleanTask.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
         cleanTask.arguments = ["-d", "com.apple.quarantine", bundlePath]
         try? cleanTask.run()
         cleanTask.waitUntilExit()
-        
         let chmodTask = Process()
         chmodTask.executableURL = URL(fileURLWithPath: "/bin/chmod")
         chmodTask.arguments = ["+x", bundlePath]
         try? chmodTask.run()
         chmodTask.waitUntilExit()
-        
         paths.append(bundlePath)
     }
-    
     paths.append(contentsOf: [
         "/usr/local/bin/adb",
         "/opt/homebrew/bin/adb",
@@ -54,14 +50,10 @@ public func setupAdbTunnel() {
     task.arguments = ["devices"]
     let pipe = Pipe()
     task.standardOutput = pipe
-    
     do {
         try task.run()
         task.waitUntilExit()
-    } catch {
-        NSLog("[TouchPad] ADB 执行失败: \(error)")
-        return
-    }
+    } catch { NSLog("[TouchPad] ADB 执行失败: \(error)"); return }
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output = String(data: data, encoding: .utf8) ?? ""
@@ -79,6 +71,7 @@ public func setupAdbTunnel() {
 
 func runAdbCommand(path: String, serial: String) {
     DispatchQueue.global().async {
+        // 1. 建立命令通道隧道 (9527)
         let tunnelTask = Process()
         tunnelTask.executableURL = URL(fileURLWithPath: path)
         tunnelTask.arguments = ["-s", serial, "reverse", "tcp:9527", "tcp:9527"]
@@ -86,8 +79,20 @@ func runAdbCommand(path: String, serial: String) {
             try tunnelTask.run()
             tunnelTask.waitUntilExit()
             if tunnelTask.terminationStatus == 0 {
-                NSLog("[TouchPad] USB 隧道已建立: \(serial)")
+                NSLog("[TouchPad] USB 命令通道隧道已建立: \(serial)")
                 
+                // 2. 建立视频通道隧道 (9528)
+                let videoTunnelTask = Process()
+                videoTunnelTask.executableURL = URL(fileURLWithPath: path)
+                videoTunnelTask.arguments = ["-s", serial, "reverse", "tcp:9528", "tcp:9528"]
+                do {
+                    try videoTunnelTask.run()
+                    NSLog("[TouchPad] USB 视频通道隧道已建立: tcp:9528")
+                } catch {
+                    NSLog("[TouchPad] ERROR: 视频通道隧道建立失败: \(error)")
+                }
+                
+                // 3. 获取设备名
                 let nameTask = Process()
                 nameTask.executableURL = URL(fileURLWithPath: path)
                 nameTask.arguments = ["-s", serial, "shell", "settings", "get", "secure", "bluetooth_name"]
@@ -103,6 +108,8 @@ func runAdbCommand(path: String, serial: String) {
                 } catch {
                     AppState.shared.registerDevice(serial)
                 }
+            } else {
+                NSLog("[TouchPad] ERROR: 命令通道隧道建立失败")
             }
         } catch {
             NSLog("[TouchPad] ADB 异常: \(error)")
@@ -132,6 +139,7 @@ func startTcpServer() {
             Darwin.bind(listener, $0, socklen_t(MemoryLayout<sockaddr_in>.stride))
         }
     }
+    
     listen(listener, 5)
     NSLog("[TouchPad] 服务已启动 (仅USB模式)")
     
@@ -143,14 +151,11 @@ func startTcpServer() {
                 accept(listener, $0, &clientAddrLen)
             }
         }
-        
         if clientSock > 0 {
             var noDelay: Int32 = 1
             setsockopt(clientSock, IPPROTO_TCP, TCP_NODELAY, &noDelay, socklen_t(MemoryLayout<Int32>.size))
             currentClientSocket = clientSock
-            DispatchQueue.global().async {
-                handleClient(sock: clientSock)
-            }
+            DispatchQueue.global().async { handleClient(sock: clientSock) }
         }
     }
 }
@@ -159,7 +164,6 @@ func handleClient(sock: Int32) {
     var buffer = [UInt8](repeating: 0, count: 1024)
     var recvStr = ""
     var deviceId: String? = nil
-    
     while true {
         let len = recv(sock, &buffer, buffer.count, 0)
         if len <= 0 { break }
@@ -178,24 +182,20 @@ func handleClient(sock: Int32) {
             if cleanMsg.hasPrefix("IDENT,") {
                 let name = cleanMsg.replacingOccurrences(of: "IDENT,", with: "")
                 deviceId = name
-                // 【关键修复】新连接建立时，强制重置状态
                 AppState.shared.isMouseDown = false
                 AppState.shared.registerDevice(name)
                 continue
             }
-            
             if cleanMsg == "SYNC_REQ" {
                 let resp = AppState.shared.isLocked ? "SYNC_RESP:LOCKED" : "SYNC_RESP:UNLOCKED"
                 sendCommandToClient(resp)
                 continue
             }
-            
             if let id = deviceId {
                 processCommand(cleanMsg, from: id)
             }
         }
     }
-    
     if let id = deviceId { AppState.shared.removeDevice(id) }
     if currentClientSocket == sock { currentClientSocket = nil }
     close(sock)

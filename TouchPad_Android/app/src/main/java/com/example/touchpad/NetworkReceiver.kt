@@ -13,58 +13,96 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
     private var isRunning = false
 
     fun connect() {
-        if (isRunning) return
+        if (isRunning) {
+            Log.w("NetworkReceiver", "Already running")
+            return
+        }
         isRunning = true
         job = CoroutineScope(Dispatchers.IO).launch {
             try {
-                socket = Socket(Constants.HOST, Constants.PORT)
+                Log.d("NetworkReceiver", "Connecting to ${Constants.HOST}:${Constants.VIDEO_PORT}")
+                socket = Socket(Constants.HOST, Constants.VIDEO_PORT)
+
+                // 【关键修复】设置超时时间，避免永久阻塞
+                socket?.soTimeout = 5000
+
                 val input = socket!!.getInputStream()
-                Log.d("TabletDisplay", "Connected to Mac")
+                Log.d("NetworkReceiver", "Connected successfully!")
 
                 while (isRunning) {
-                    // 读取数据包逻辑
                     val packet = readPacket(input)
                     if (packet != null) {
-                        withContext(Dispatchers.Main) {
-                            onFrameReceived(packet)
-                        }
+                        Log.d("NetworkReceiver", "Received packet size: ${packet.size}")
+                        onFrameReceived(packet)
+                    } else {
+                        Log.w("NetworkReceiver", "readPacket returned null (EOF or Error)")
+                        break
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TabletDisplay", "Connection error", e)
-                // 简单重连逻辑可以加在这里
+                Log.e("NetworkReceiver", "Connection error: ${e.message}", e)
+                e.printStackTrace()
+            } finally {
+                disconnect()
             }
         }
     }
 
-    private fun readPacket(input: InputStream): ByteArray? {
-        // 读取类型 (1字节)
-        val typeByte = input.read()
-        if (typeByte == -1) return null // 连接关闭
-        // val type = typeByte.toByte()
-
-        // 读取长度 (4字节)
-        val lengthBytes = ByteArray(4)
-        input.read(lengthBytes)
-        val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).int
-
-        // 读取负载数据
-        if (length > Constants.BUFFER_SIZE * 100 || length < 0) return null // 安全检查
-
-        val payload = ByteArray(length)
-        var bytesRead = 0
-        while (bytesRead < length) {
-            val read = input.read(payload, bytesRead, length - bytesRead)
-            if (read == -1) return null
-            bytesRead += read
+    private fun readFully(input: InputStream, buf: ByteArray, offset: Int, len: Int): Boolean {
+        var readTotal = 0
+        while (readTotal < len) {
+            val r = input.read(buf, offset + readTotal, len - readTotal)
+            if (r == -1) {
+                Log.e("NetworkReceiver", "readFully failed: EOF reached (read: $readTotal, expected: $len)")
+                return false
+            }
+            readTotal += r
         }
+        return true
+    }
 
-        return payload
+    private fun readPacket(input: InputStream): ByteArray? {
+        try {
+            // Read type (1 byte)
+            val type = input.read()
+            if (type == -1) {
+                Log.e("NetworkReceiver", "readPacket: Type is -1 (EOF)")
+                return null
+            }
+
+            // Read length (4 bytes big-endian)
+            val lengthBytes = ByteArray(4)
+            if (!readFully(input, lengthBytes, 0, 4)) {
+                Log.e("NetworkReceiver", "readPacket: Failed to read length bytes")
+                return null
+            }
+            val length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).int
+
+            if (length <= 0 || length > Constants.BUFFER_SIZE * 10) {
+                Log.e("NetworkReceiver", "readPacket: Invalid packet length: $length")
+                return null
+            }
+
+            // Read payload
+            val payload = ByteArray(length)
+            if (!readFully(input, payload, 0, length)) {
+                Log.e("NetworkReceiver", "readPacket: Failed to read payload bytes (len: $length)")
+                return null
+            }
+
+            return payload
+        } catch (e: Exception) {
+            Log.e("NetworkReceiver", "readPacket exception: ${e.message}")
+            return null
+        }
     }
 
     fun disconnect() {
+        Log.d("NetworkReceiver", "Disconnecting...")
         isRunning = false
-        socket?.close()
+        try {
+            socket?.close()
+        } catch (_: Exception) {}
         job?.cancel()
     }
 }

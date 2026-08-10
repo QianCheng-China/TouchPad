@@ -116,6 +116,8 @@ cat <<EOF > "$CONTENTS_DIR/Info.plist"
     <string>Copyright 2024 User. All rights reserved.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>This app requires access to control other applications.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>需要屏幕录制权限以进行屏幕镜像。</string>
 </dict>
 </plist>
 EOF
