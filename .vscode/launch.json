@@ -19,6 +19,46 @@
             "target": "Sidecard",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release Sidecard (macOS)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchPad}/TouchPad_macOS",
+            "name": "Debug TouchPad (TouchPad_macOS)",
+            "target": "TouchPad",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug TouchPad (TouchPad_macOS)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchPad}/TouchPad_macOS",
+            "name": "Release TouchPad (TouchPad_macOS)",
+            "target": "TouchPad",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release TouchPad (TouchPad_macOS)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchTablet}/build_macOS",
+            "name": "Debug TouchPad (build_macOS)",
+            "target": "TouchPad",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug TouchPad (build_macOS)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:TouchTablet}/build_macOS",
+            "name": "Release TouchPad (build_macOS)",
+            "target": "TouchPad",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release TouchPad (build_macOS)"
         }
     ]
 }

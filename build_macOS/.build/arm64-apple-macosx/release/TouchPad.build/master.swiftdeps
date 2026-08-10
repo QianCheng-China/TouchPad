@@ -1,11 +1,11 @@
 version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
 options: "9b5c470370c6f0e65c28e4b4fef05fe913d34ada42f2751f4f03950b4c19b40d"
-build_start_time: [1786333501, 248169000]
-build_end_time: [1786333505, 550420000]
+build_start_time: [1786364340, 616300000]
+build_end_time: [1786364343, 80639000]
 inputs:
-  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift": [1786276712, 389479255]
-  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift": [1786275479, 722202887]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppDelegate.swift": [1786364315, 818762430]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/AppState.swift": [1786364288, 262580670]
   "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/MouseController.swift": [1786275479, 722559545]
-  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift": [1786277818, 701060265]
-  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift": [1786333126, 786301000]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/NetworkManager.swift": [1786363606, 293600073]
+  "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/ScreenStreamer.swift": [1786364266, 100144881]
   "/Users/admin/Desktop/TouchTablet/build_macOS/Sources/macOSApp/main.swift": [1785682254, 744374049]

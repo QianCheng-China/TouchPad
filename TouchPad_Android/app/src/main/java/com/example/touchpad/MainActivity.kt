@@ -233,7 +233,6 @@ class MainActivity : ComponentActivity() {
     private fun startVideoStream(surfaceTexture: SurfaceTexture) {
         val surface = Surface(surfaceTexture)
         decoderRenderer = DecoderRenderer(surface)
-
         // 核心修复 2：当视频尺寸回调时，设置缓冲区大小
         // 由于我们现在发送的是物理像素 (2560x1600)，View 也是 (2560x1600)
         // 设置相同的尺寸，TextureView 会完美呈现 1:1 画面，不需要 Matrix 变换
@@ -248,9 +247,17 @@ class MainActivity : ComponentActivity() {
         }
         decoderRenderer?.start()
 
-        networkReceiver = NetworkReceiver { data ->
-            decoderRenderer?.decode(data)
-        }
+        networkReceiver = NetworkReceiver(
+            onFrameReceived = { data ->
+                decoderRenderer?.decode(data)
+            },
+            onDisconnected = {
+                // 【新增】连接断开时，在主线程恢复白屏视图
+                runOnUiThread {
+                    disableMirrorMode()
+                }
+            }
+        )
         networkReceiver?.connect()
         println("[Android] 屏幕镜像开启")
     }

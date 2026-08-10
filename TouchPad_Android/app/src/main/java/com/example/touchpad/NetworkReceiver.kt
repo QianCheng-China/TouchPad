@@ -7,7 +7,10 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
+class NetworkReceiver(
+    private val onFrameReceived: (ByteArray) -> Unit,
+    private val onDisconnected: () -> Unit // 【新增】连接断开回调
+) {
     private var job: Job? = null
     private var socket: Socket? = null
     private var isRunning = false
@@ -23,11 +26,9 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
             var attempts = 0
             var connected = false
 
-            // 【修改】加快重试速度，捕捉瞬态连接失败
             while (isRunning && attempts < 10) {
                 try {
                     Log.d("NetworkReceiver", "Connecting to ${Constants.HOST}:${Constants.VIDEO_PORT} (Attempt ${attempts + 1})")
-
                     socket?.close()
                     socket = null
 
@@ -44,7 +45,7 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
 
                     if (isRunning && attempts < 10) {
                         Log.w("NetworkReceiver", "Connection failed: ${e.message}. Retrying in 100ms...")
-                        delay(100) // 缩短延迟至 100ms
+                        delay(100)
                     } else {
                         Log.e("NetworkReceiver", "Failed to connect after $attempts attempts")
                     }
@@ -71,6 +72,8 @@ class NetworkReceiver(private val onFrameReceived: (ByteArray) -> Unit) {
                 Log.e("NetworkReceiver", "Connection error: ${e.message}")
             } finally {
                 disconnect()
+                // 【新增】连接循环结束，通知 UI 断开
+                onDisconnected()
             }
         }
     }
