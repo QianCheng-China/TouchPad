@@ -90,8 +90,8 @@ fi
 # 8. 创建 Info.plist
 echo "生成 Info.plist..."
 # 定义版本号
-VERSION="0.1.1"
-BUILD_NUMBER="2"
+VERSION="0.1.2rc"
+BUILD_NUMBER="5"
 
 cat <<EOF > "$CONTENTS_DIR/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>

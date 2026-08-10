@@ -15,8 +15,8 @@ android {
         applicationId = "com.example.touchpad"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.1.2gamma"
+        versionCode = 5
+        versionName = "0.1.2rc"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
