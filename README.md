@@ -49,13 +49,13 @@ Android 10.0 /API 29及更新版本。
 - 使用数据线连接Android平板与 Mac 而非仅充电线。
 - 由于Android限制，在某些设备上，“锁定屏幕”无法屏蔽上滑返回桌面手势。除非获取设备所有权。如果你需要，请按以下方法操作：
 
-    在 Mac 上打开终端，执行以下命令授权：
+在 Mac 上打开终端，执行以下命令授权：
 
 ```Shell
 adb shell dpm set-device-owner com.example.touchpad/.MyDeviceAdminReceiver
 ```
 
-    当提示 "Success: set active admin" 时，表示授权成功。此后点击“锁定”，应用将进入强力锁定模式，无法通过手势退出，只能通过Mac 端解锁。此后，如果你需要卸载Android平板上的TouchPad，需要先使用如下命令解除该权限，否则可能无法卸载。
+当提示 "Success: set active admin" 时，表示授权成功。此后点击“锁定”，应用将进入强力锁定模式，无法通过手势退出，只能通过Mac 端解锁。此后，如果你需要卸载Android平板上的TouchPad，需要先使用如下命令解除该权限，否则可能无法卸载。
 
 ```Shell
 adb shell dpm remove-active-admin com.example.touchpad/.MyDeviceAdminReceiver
